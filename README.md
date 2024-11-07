@@ -6,17 +6,17 @@ This project implements a solution for **data migration**, **transaction managem
 
 ### Project Files
 
-- **`api_datamanagement_gc.py`**: This file contains the classes and methods for **data backup and restoration** in AVRO format. It includes the `DataBackup` class, which enables backing up selected tables to Azure Blob Storage, and `DataRestore`, which restores data from an AVRO file stored in Blob Storage back to the database. It uses `fastavro` and `BlobServiceClient` from Azure for data serialization and storage&#8203;:contentReference[oaicite:0]{index=0}.
+- **`api_datamanagement_gc.py`**: This file contains the classes and methods for **data backup and restoration** in AVRO format. It includes the `DataBackup` class, which enables backing up selected tables to Azure Blob Storage, and `DataRestore`, which restores data from an AVRO file stored in Blob Storage back to the database. It uses `fastavro` and `BlobServiceClient` from Azure for data serialization and storage.
 
 - **`api_reporting_gc.py`**: This file defines the reporting service, enabling specific metric queries and reports. The `APIReportingGC` class includes methods to:
   - Get the number of employees hired by department and job, organized by quarter.
   - List departments that hired more employees than the yearly average.
   
-  These methods query predefined views in the database and return the organized results&#8203;:contentReference[oaicite:1]{index=1}.
+  These methods query predefined views in the database and return the organized results.
 
-- **`api_transactional_gc.py`**: This file handles **data validation and insertion** into the database. The `DataValidator` class checks that transaction data meets the business rules, while `DataInserter` is responsible for inserting validated records into the corresponding tables. It also includes a **transaction error logging** system to log transactions that don’t meet requirements&#8203;:contentReference[oaicite:2]{index=2}.
+- **`api_transactional_gc.py`**: This file handles **data validation and insertion** into the database. The `DataValidator` class checks that transaction data meets the business rules, while `DataInserter` is responsible for inserting validated records into the corresponding tables. It also includes a **transaction error logging** system to log transactions that don’t meet requirements.
 
-- **`database_connection.py`**: This file configures the **SQL database connection** using `pyodbc` and manages access credentials. If the environment is set to Azure, it retrieves credentials from `Azure Key Vault` using `DefaultAzureCredential` and `SecretClient`. Otherwise, it uses local credentials&#8203;:contentReference[oaicite:3]{index=3}.
+- **`database_connection.py`**: This file configures the **SQL database connection** using `pyodbc` and manages access credentials. If the environment is set to Azure, it retrieves credentials from `Azure Key Vault` using `DefaultAzureCredential` and `SecretClient`. Otherwise, it uses local credentials.
 
 - **`function_app.py`**: This is the main FastAPI application file that defines the **core API endpoints**:
   - `/InsertData`: Inserts validated data into the database.
@@ -25,15 +25,15 @@ This project implements a solution for **data migration**, **transaction managem
   - `/EmployeeHiresByQuarter`: Queries hires by quarter.
   - `/DepartmentsAboveAverage`: Queries departments with above-average hiring.
 
-  Each endpoint is designed to handle specific operations, with error logging and data validation&#8203;:contentReference[oaicite:4]{index=4}.
+  Each endpoint is designed to handle specific operations, with error logging and data validation&#8203;:contentReference.
 
-- **`function.json`**: Defines the **input and output configurations** for the Azure function, specifying that the HTTP trigger (`httpTrigger`) allows `GET` and `POST` methods and sets the authentication level&#8203;:contentReference[oaicite:5]{index=5}.
+- **`function.json`**: Defines the **input and output configurations** for the Azure function, specifying that the HTTP trigger (`httpTrigger`) allows `GET` and `POST` methods and sets the authentication level.
 
-- **`host.json`**: General host configuration for the Azure function, including **Application Insights** settings for logging and telemetry sampling, which is useful for monitoring the application in production&#8203;:contentReference[oaicite:6]{index=6}.
+- **`host.json`**: General host configuration for the Azure function, including **Application Insights** settings for logging and telemetry sampling, which is useful for monitoring the application in production.
 
-- **`local.settings.json`**: Contains the **environment variables** required to run the application locally, including database credentials, Azure Blob Storage, and Key Vault configurations. This file should not be shared publicly as it contains sensitive information&#8203;:contentReference[oaicite:7]{index=7}.
+- **`local.settings.json`**: Contains the **environment variables** required to run the application locally, including database credentials, Azure Blob Storage, and Key Vault configurations. This file should not be shared publicly as it contains sensitive information.
 
-- **`requirements.txt`**: Lists the **project dependencies** required to run the application. It includes `FastAPI`, `uvicorn` to run the server, and Azure libraries like `azure-identity`, `azure-keyvault-secrets`, and `azure-storage-blob` for Azure service integration&#8203;:contentReference[oaicite:8]{index=8}.
+- **`requirements.txt`**: Lists the **project dependencies** required to run the application. It includes `FastAPI`, `uvicorn` to run the server, and Azure libraries like `azure-identity`, `azure-keyvault-secrets`, and `azure-storage-blob` for Azure service integration
 
 ## Data Flow Diagram
 
