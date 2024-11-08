@@ -175,6 +175,8 @@ A GET endpoint that returns a list of departments with above-average hires.
 
 ## 3. Architecture Overview
 
+![Globant Poc Architecture](./GlobanArchitectureDiagram.png)
+
 The solution is built on Azure components to ensure scalability, security, and ease of management. Key components include:
 
 - **Azure Data Factory (ADF)**: Used for data ingestion, ADF pipelines automate the process of loading historical data from CSV files to the staging tables in Azure SQL Database. The data is then transformed and loaded into production tables, ensuring a clean and structured dataset.
