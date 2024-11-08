@@ -1,47 +1,183 @@
-# Globant Data Management and Reporting API
+# Globant POC Project
 
-This project implements a solution for **data migration**, **transaction management**, and **report generation** using a set of FastAPI-based services integrated with Azure for data storage and management. Below is a description of each file in the project and its function.
+## Introduction
 
-## Project Structure
+This documentation provides an in-depth overview of the Globant POC Project, designed to solve two main challenges focused on data migration, management, and reporting in Azure. The goal is to demonstrate the effective handling of data operations and analytics through a robust API.
 
-### Project Files
+**Challenge #1** involves migrating historical data from CSV files to an SQL database and building a REST API to manage data transactions, validate entries, and support batch processing. Additionally, it includes backup and restore capabilities using AVRO format in Azure Blob Storage to ensure data integrity and recoverability.
 
-- **`api_datamanagement_gc.py`**: This file contains the classes and methods for **data backup and restoration** in AVRO format. It includes the `DataBackup` class, which enables backing up selected tables to Azure Blob Storage, and `DataRestore`, which restores data from an AVRO file stored in Blob Storage back to the database. It uses `fastavro` and `BlobServiceClient` from Azure for data serialization and storage.
+**Challenge #2** is based on the loaded data and requires a set of API endpoints to provide specific metrics requested by stakeholders. These include quarterly hiring trends and identifying departments with above-average hiring rates.
 
-- **`api_reporting_gc.py`**: This file defines the reporting service, enabling specific metric queries and reports. The `APIReportingGC` class includes methods to:
-  - Get the number of employees hired by department and job, organized by quarter.
-  - List departments that hired more employees than the yearly average.
-  
-  These methods query predefined views in the database and return the organized results.
+This document describes the project files, API endpoints, and the architecture used in Azure to support the solution.
 
-- **`api_transactional_gc.py`**: This file handles **data validation and insertion** into the database. The `DataValidator` class checks that transaction data meets the business rules, while `DataInserter` is responsible for inserting validated records into the corresponding tables. It also includes a **transaction error logging** system to log transactions that don’t meet requirements.
+## 1. List of Project Files
 
-- **`database_connection.py`**: This file configures the **SQL database connection** using `pyodbc` and manages access credentials. If the environment is set to Azure, it retrieves credentials from `Azure Key Vault` using `DefaultAzureCredential` and `SecretClient`. Otherwise, it uses local credentials.
+Below is a detailed description of each file included in the project:
 
-- **`function_app.py`**: This is the main FastAPI application file that defines the **core API endpoints**:
-  - `/InsertData`: Inserts validated data into the database.
-  - `/BackupData`: Performs backups of specified tables.
-  - `/RestoreData`: Restores tables from a backup.
-  - `/EmployeeHiresByQuarter`: Queries hires by quarter.
-  - `/DepartmentsAboveAverage`: Queries departments with above-average hiring.
+- **api_datamanagement_gc.py**: Manages data backup and restore functionalities. This script includes operations to handle AVRO file generation and loading from Azure Blob Storage, supporting data integrity and disaster recovery.
 
-  Each endpoint is designed to handle specific operations, with error logging and data validation&#8203;:contentReference.
+- **api_reporting_gc.py**: Handles reporting features for the application, including specific data aggregation endpoints. Provides analytical insights, such as quarterly hiring trends and departments with above-average hiring rates.
 
-- **`function.json`**: Defines the **input and output configurations** for the Azure function, specifying that the HTTP trigger (`httpTrigger`) allows `GET` and `POST` methods and sets the authentication level.
+- **api_transactional_gc.py**: Defines transactional operations related to employee, department, and job records. Manages the creation, validation, and error handling for these entities, supporting CRUD operations.
 
-- **`host.json`**: General host configuration for the Azure function, including **Application Insights** settings for logging and telemetry sampling, which is useful for monitoring the application in production.
+- **database_connection.py**: Sets up and manages the database connection parameters. This script includes functionality to establish secure connections using Azure Key Vault secrets and handles connection pooling.
 
-- **`local.settings.json`**: Contains the **environment variables** required to run the application locally, including database credentials, Azure Blob Storage, and Key Vault configurations. This file should not be shared publicly as it contains sensitive information.
+- **function.json**: Configuration file for the Azure Function, specifying the trigger, bindings, and authorization level for the function app.
 
-- **`requirements.txt`**: Lists the **project dependencies** required to run the application. It includes `FastAPI`, `uvicorn` to run the server, and Azure libraries like `azure-identity`, `azure-keyvault-secrets`, and `azure-storage-blob` for Azure service integration
+- **function_app.py**: Main entry point for the FastAPI application, defining the API endpoints, request handling, and response formatting. This script integrates the transactional, data management, and reporting modules, making them accessible via HTTP.
 
-## Data Flow Diagram
+- **requirements.txt**: Lists all Python dependencies for the project, including versions required for Azure SDK, FastAPI, and other libraries. Used to ensure environment consistency.
 
-![Data Flow Diagram](./ADFPipeline.png)
+- **Dockerfile**: Instructions for building the Docker image, setting up dependencies, and configuring environment variables. Enables the application to run in isolated Docker containers.
 
-## Azure Data Factory Configuration
+- **docker-compose.yml**: Facilitates deployment with Docker Compose, managing container creation, network setup, and environment variable configuration. Simplifies multi-container deployment for local testing.
 
-The following **Azure Data Factory** pipeline is used to load and transform employee, department, and job data:
+## 2. Endpoints and Functionalities
+
+This section provides an overview of each endpoint, its functionality, and specific test cases for validating the behavior and response of each API route.
+
+### Endpoint `/InsertData`
+
+Allows inserting data into the `HiredEmployees`, `Departments`, and `Jobs` tables based on the specified transaction type.
+
+#### Expected JSON Input Structure:
+```json
+{
+  "transactionType": "TransactionName",
+  "transactions": [
+    {
+      // Specific fields for the transaction type
+    }
+  ]
+}
+```
+#### Test Cases for `HiredEmployees`
+
+- **Successful Insertion**:
+```json
+{
+  "transactionType": "HiredEmployees",
+  "transactions": [
+    {
+      "FirstName": "Alice",
+      "LastName": "Smith",
+      "HireDate": "2023-06-01T08:30:00Z",
+      "JobID": 3,
+      "DepartmentID": 1
+    }
+  ]
+}
+```
+- **Error: Missing Field (`FirstName`)**:
+```json
+{
+  "transactionType": "HiredEmployees",
+  "transactions": [
+    {
+      "LastName": "Smith",
+      "HireDate": "2023-06-01T08:30:00Z",
+      "JobID": 3,
+      "DepartmentID": 1
+    }
+  ]
+}
+```
+- **Error: Nonexistent `JobID` or `DepartmentID`**:
+```json
+{
+  "transactionType": "HiredEmployees",
+  "transactions": [
+    {
+      "FirstName": "Bob",
+      "LastName": "Brown",
+      "HireDate": "2023-06-01T08:30:00Z",
+      "JobID": 999,
+      "DepartmentID": 888
+    }
+  ]
+}
+```
+### Endpoint `/BackupData`
+
+Enables creating an AVRO backup of a specific table or all tables.
+
+#### Expected JSON Input Structure:
+```json
+{
+  "tableName": "TableName"
+}
+```
+#### Test Cases
+
+- **Backup of an Existing Table**:
+```json
+{
+  "tableName": "Departments"
+}
+```
+- **Backup of All Tables**:
+```json
+{
+  "tableName": "all"
+}
+```
+- **Error: Nonexistent Table Backup Attempt**:
+```json
+{
+  "tableName": "NonExistentTable"
+}
+```
+### Endpoint `/RestoreData`
+
+Allows restoring a specific table or all tables from an AVRO backup.
+
+#### Expected JSON Input Structure:
+```json
+{
+  "tableName": "TableName"
+}
+```
+#### Test Cases
+
+- **Restore of an Existing Table**:
+```json
+{
+  "tableName": "Jobs"
+}
+```
+- **Restore of All Tables**:
+```json
+{
+  "tableName": "all"
+}
+```
+- **Error: Nonexistent Table Restore Attempt**:
+```json
+{
+  "tableName": "NonExistentTable"
+}
+```
+### Endpoint `/EmployeeHiresByQuarter`
+
+A GET endpoint that retrieves data on employee hires per quarter, organized by department and job.
+
+#### Test Case:
+
+- **Successful Retrieval of Aggregated Data by Quarter**: Run a GET request on `/EmployeeHiresByQuarter` and verify that the output contains the expected aggregated information.
+
+### Endpoint `/DepartmentsAboveAverage`
+
+A GET endpoint that returns a list of departments with above-average hires.
+
+#### Test Case:
+
+- **Successful Retrieval of Above-Average Hire Departments**: Run a GET request on `/DepartmentsAboveAverage` and verify that the output matches the expected data.
+
+## 3. Architecture Overview
+
+The solution is built on Azure components to ensure scalability, security, and ease of management. Key components include:
+
+- **Azure Data Factory (ADF)**: Used for data ingestion, ADF pipelines automate the process of loading historical data from CSV files to the staging tables in Azure SQL Database. The data is then transformed and loaded into production tables, ensuring a clean and structured dataset.
 
 ![ADF Pipeline](./ADFDataFlow.png)
 
@@ -49,8 +185,20 @@ The ADF data flow consists of the following stages:
 
 1. **Import from CSV Files**: Data is read from files in an Azure Blob Storage container.
 2. **Null Value Imputation**: Data is cleaned, and null values are imputed.
-3. **Load to Database**: The data is stored in the respective SQL tables.
+3. **Load to Database**: The data is stored in the respective SQL table
 
----
+- **Data Flow Diagram**
 
-This `README.md` file provides an overview of the project components and their functionality. Refer to the source code and configuration files for more details on the implementation.
+![Data Flow Diagram](./ADFPipeline.png)
+
+- **Azure SQL Database**: Hosts the core application data, including historical and transactional data. This provides a scalable, secure, and managed SQL environment to store and query the data, supporting efficient reporting and analytics.
+
+- **Azure Blob Storage**: Supports data backup and restore operations by storing AVRO files. This ensures that data snapshots are securely stored and can be restored as needed for business continuity.
+
+- **Azure Key Vault**: Manages sensitive information, such as database connection strings and storage keys, ensuring that credentials are securely stored and accessed by the application.
+
+- **GlobantPoc (Azure App Service)**: Serves as the hosting environment for the API, deployed as a web app on Azure. This allows the application to scale easily and integrate seamlessly with other Azure resources, providing a reliable platform for the API endpoints that handle data transactions, backups, and reporting.
+
+- **Docker**: The entire application, including all API endpoints, is containerized with Docker to ensure consistency and portability across environments. Docker enables developers to replicate the production environment locally, ensuring that testing and development align closely with deployment conditions. A `Dockerfile` is provided to build the image, while `docker-compose.yml` facilitates container orchestration for local testing and debugging.
+
+This architecture provides a robust foundation for handling complex data migration and reporting requirements, leveraging Azure's managed services for security, performance, and scalability, while Docker ensures a consistent and portable deployment environment.
